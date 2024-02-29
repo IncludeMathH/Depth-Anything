@@ -112,6 +112,9 @@ depth_anything = DepthAnything.from_pretrained('checkpoints/depth_anything_vitb1
 ```bash
 git clone https://github.com/LiheYoung/Depth-Anything
 cd Depth-Anything
+conda create -n depth-anything python=3.8 -y
+conda activate depth-anything
+conda install pytorch==1.13.0 torchvision==0.14.0 torchaudio==0.13.0 pytorch-cuda=11.7 -c pytorch -c nvidia
 pip install -r requirements.txt
 ```
 

@@ -19,6 +19,8 @@ if __name__ == '__main__':
     
     parser.add_argument('--pred-only', dest='pred_only', action='store_true', help='only display the prediction')
     parser.add_argument('--grayscale', dest='grayscale', action='store_true', help='do not apply colorful palette')
+
+    parser.add_argument('--save-disp', dest='save_disp', action='store_true', help='save disparity map')
     
     args = parser.parse_args()
     
@@ -31,7 +33,7 @@ if __name__ == '__main__':
     
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    depth_anything = DepthAnything.from_pretrained('LiheYoung/depth_anything_{}14'.format(args.encoder)).to(DEVICE).eval()
+    depth_anything = DepthAnything.from_pretrained('./checkpoints/{}14'.format(args.encoder)).to(DEVICE).eval()
     
     total_params = sum(param.numel() for param in depth_anything.parameters())
     print('Total parameters: {:.2f}M'.format(total_params / 1e6))
@@ -76,6 +78,13 @@ if __name__ == '__main__':
             depth = depth_anything(image)
         
         depth = F.interpolate(depth[None], (h, w), mode='bilinear', align_corners=False)[0, 0]
+
+        filename = os.path.basename(filename)
+
+        if args.save_disp:
+            disparity = depth.cpu().numpy()
+            np.save(os.path.join(args.outdir, filename[:filename.rfind('.')] + '.npy'), disparity)
+
         depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
         
         depth = depth.cpu().numpy().astype(np.uint8)
@@ -84,8 +93,6 @@ if __name__ == '__main__':
             depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
         else:
             depth = cv2.applyColorMap(depth, cv2.COLORMAP_INFERNO)
-        
-        filename = os.path.basename(filename)
         
         if args.pred_only:
             cv2.imwrite(os.path.join(args.outdir, filename[:filename.rfind('.')] + '_depth.png'), depth)
